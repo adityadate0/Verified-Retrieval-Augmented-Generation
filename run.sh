@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # 1. Setup Environment
-if [ ! -d "offline_mechanic_env" ]; then
+if [ ! -d "veri_rag_env" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv offline_mechanic
-    source offline_mechanic_env/bin/activate
+    python3 -m venv veri_rag_env
+    source veri_rag_env/bin/activate
     pip install --upgrade pip
 else
-    source offline_mechanic_env/bin/activate
+    source veri_rag_env/bin/activate
 fi
 
 # 2. Check Dependencies & Start Ollama
