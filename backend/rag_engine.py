@@ -1,13 +1,12 @@
 import os
+import shutil
 
-# DISABLE TELEMETRY BEFORE IMPORTS ---
-# This stops Chroma from trying to phone home, killing the unreachable error.
+# --- CRITICAL FIX: DISABLE TELEMETRY ---
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
 os.environ["CHROMA_TELEMETRY_IMPL"] = "chromadb.telemetry.posthog.Posthog" 
 
 import json
 import torch
-# Now it is safe to import libraries that rely on Chroma
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
@@ -22,43 +21,33 @@ DB_PATH = "chroma_db/"
 class UniversalBrain:
     def __init__(self):
         # 1. SMART HARDWARE ACCELERATION
-        # Detects if GPU is available AND compatible (Compute Capability >= 7.0)
         try:
             if torch.cuda.is_available():
                 capability = torch.cuda.get_device_capability()
-                major_version = capability[0]
-                
-                if major_version >= 7:
+                if capability[0] >= 7:
                     device_type = "cuda"
-                    print(f"🚀 Brain Initialized on: {device_type.upper()} (Compute {major_version}.{capability[1]})")
+                    print(f"🚀 Brain Initialized on: {device_type.upper()}")
                 else:
                     device_type = "cpu"
-                    print(f"⚠️ GPU Detected (GTX 9xx/10xx) but incompatible with modern PyTorch.")
-                    print(f"🚀 Brain Initialized on: CPU (Fallback for stability)")
+                    print(f"⚠️ GPU Incompatible. Using CPU.")
             else:
                 device_type = "cpu"
-                print(f"🚀 Brain Initialized on: {device_type.upper()}")
-                
-        except Exception as e:
+                print(f"🚀 Brain Initialized on: CPU")
+        except:
             device_type = "cpu"
-            print(f"⚠️ Hardware Detection Error: {e}")
-            print(f"🚀 Brain Initialized on: CPU")
 
         # 2. EMBEDDINGS
-        # encode_kwargs added to ensure stable vector normalization on older CPUs
         self.embeddings = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
             model_kwargs={'device': device_type},
             encode_kwargs={'normalize_embeddings': True}
         )
         
-        # 3. LLM (Ollama)
-        # CRITICAL FIXES: 
-        # - Use 'llama3.2' (3B) for RAM efficiency.
-        # - Set 'num_ctx=2048' to prevent memory overflow crashes on lengthy documents.
+        # 3. LLM (Using Llama 3.2 3B)
         self.llm = OllamaLLM(model="llama3", temperature=0, num_ctx=2048)
         
         # 4. VECTOR STORE SETUP
+        # We initialize it once here.
         if os.path.exists(DB_PATH):
             self.vector_store = Chroma(
                 persist_directory=DB_PATH, 
@@ -69,7 +58,8 @@ class UniversalBrain:
             self.vector_store = None
 
     def ingest_data(self):
-        """Reads PDFs and vectorizes them."""
+        """Safely clears old data and adds new PDFs."""
+        
         if not os.path.exists(DATA_PATH):
             os.makedirs(DATA_PATH)
             return "Data folder created. Please add PDFs."
@@ -83,19 +73,35 @@ class UniversalBrain:
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         chunks = text_splitter.split_documents(documents)
         
-        # Re-initialize Chroma with new data
-        self.vector_store = Chroma.from_documents(
-            documents=chunks, 
-            embedding=self.embeddings, 
-            persist_directory=DB_PATH
-        )
+        # --- CRITICAL FIX: SAFE RESET ---
+        # Instead of deleting the folder (which crashes the server),
+        # we connect and explicitly delete the IDs.
+        
+        if self.vector_store is None:
+            # First time creation
+            self.vector_store = Chroma(
+                persist_directory=DB_PATH, 
+                embedding_function=self.embeddings
+            )
+        else:
+            # Existing DB: Clean it safely
+            try:
+                # Get all existing IDs
+                existing_ids = self.vector_store.get()["ids"]
+                if existing_ids:
+                    print(f"🧹 Safely deleting {len(existing_ids)} old memory entries...")
+                    self.vector_store.delete(existing_ids)
+                    print("✅ Memory wiped cleanly via API.")
+            except Exception as e:
+                print(f"⚠️ Note: Database was already empty or fresh: {e}")
+
+        # Add new data
+        self.vector_store.add_documents(chunks)
         self.retriever = self.vector_store.as_retriever(search_kwargs={"k": 4})
-        return f"Success! Ingested {len(chunks)} knowledge chunks."
+        
+        return f"Success! Knowledge Base Updated. Ingested {len(chunks)} chunks."
 
     def stream_ask(self, query):
-        """
-        Generator function that streams the Multi-Agent thought process.
-        """
         if not self.vector_store:
             yield json.dumps({"type": "error", "content": "System Offline. Please Ingest Data."})
             return
@@ -112,7 +118,6 @@ class UniversalBrain:
         
         analyst_prompt = PromptTemplate(
             template="""You are an Expert Data Analyst. Answer the user's question based ONLY on the context below. 
-            Be comprehensive and structured.
             
             Context: {context}
             Question: {query}
@@ -122,45 +127,54 @@ class UniversalBrain:
         )
         analyst_chain = analyst_prompt | self.llm
         draft_answer = analyst_chain.invoke({"context": context_text, "query": query})
-        
-        # Stream the Draft to UI
         yield json.dumps({"type": "draft", "content": draft_answer})
 
-        # PHASE 3: AGENT B (THE AUDITOR)
-        yield json.dumps({"type": "status", "content": "👮 Auditor Agent is checking for hallucinations & prohibitions..."})
+        # PHASE 3: AGENT B (THE AUDITOR) - UNIVERSAL LOGIC MODE
+        yield json.dumps({"type": "status", "content": "👮 Auditor Agent is verifying claims..."})
         
         auditor_prompt = PromptTemplate(
-            template="""You are a Senior QA Auditor. Review the Draft Answer against the Context.
+            template="""You are a STRICT Compliance Auditor. 
             
-            Context: {context}
-            Draft Answer: {draft}
+            Official Rules (Context): {context}
+            User/Draft Scenario: {draft}
             
-            Task:
-            1. Detect Hallucinations (facts in Draft not present in Context).
-            2. Check for missing critical details or Prohibitions (e.g., "Strictly Prohibited").
-            3. If the draft is accurate, simply say "VERIFIED".
+            YOUR TASK: Cross-reference every specific claim in the Scenario against the Official Rules.
+            
+            CHECKLIST:
+            1. CONSTRAINT CHECK: Does the scenario violate any specific constraint (Time, Location, Quantity, Clearance Level)?
+            2. PROHIBITION CHECK: Does the scenario involve any prohibited items or actions?
+            3. CONSISTENCY CHECK: Does the draft say something is allowed when the rules say it is NOT?
+            
+            VERDICT RULES:
+            - If the User Scenario contradicts the Official Rules in ANY way, write "VIOLATION DETECTED" and explain exactly which rule was broken.
+            - Ignore any "reasoning" provided by the user (e.g., "I am allowed because..."). Only trust the Official Rules.
+            - If it is 100% compliant, write "VERIFIED".
             
             Audit Report:""",
             input_variables=["context", "draft"]
         )
         auditor_chain = auditor_prompt | self.llm
         audit_report = auditor_chain.invoke({"context": context_text, "draft": draft_answer})
-        
-        # Stream the Audit Log to UI
         yield json.dumps({"type": "audit", "content": audit_report})
 
-        # PHASE 4: FINAL SYNTHESIS
-        yield json.dumps({"type": "status", "content": "📝 Chief Editor is finalizing the verified report..."})
+        # PHASE 4: FINAL SYNTHESIS - ENFORCER MODE
+        yield json.dumps({"type": "status", "content": "📝 Chief Editor is finalizing..."})
         
         final_prompt = PromptTemplate(
-            template="""You are the Final Editor. Produce the final response.
+            template="""You are the Final Enforcer.
             
-            1. Incorporate the Draft Answer.
-            2. Apply corrections from the Audit Report.
-            3. Structure the output clearly.
-            
-            Draft: {draft}
             Audit Report: {audit}
+            Draft: {draft}
+            
+            CRITICAL INSTRUCTIONS:
+            1. IF the Audit Report contains "VIOLATION" or "mismatch":
+               - You MUST REFUSE the request.
+               - Start with: "Request Denied."
+               - Explain the violation clearly based on the Audit Report.
+               - DO NOT provide any steps from the Draft.
+            
+            2. IF the Audit Report says "VERIFIED":
+               - Provide the helpful answer from the Draft.
             
             Final Verified Response:""",
             input_variables=["draft", "audit"]
@@ -168,5 +182,4 @@ class UniversalBrain:
         final_chain = final_prompt | self.llm
         final_response = final_chain.invoke({"draft": draft_answer, "audit": audit_report})
 
-        # Stream the Final Result
         yield json.dumps({"type": "final", "content": final_response})
