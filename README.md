@@ -120,7 +120,7 @@ chmod +x run.sh
 
 ### What This Script Does
 
-- Creates a virtual environment `offline_mechanic_env`.
+- Creates a virtual environment `veri_rag_env`.
 - Installs Python dependencies from `requirements.txt`.
 - Checks if `ollama` is running; starts it if not.
 - Pulls the `llama3` model (if not already present).
