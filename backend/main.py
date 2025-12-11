@@ -8,7 +8,7 @@ from backend.rag_engine import UniversalBrain
 
 app = FastAPI()
 
-# FIX: Add CORS to allow Streamlit to communicate freely
+# Enable CORS for Streamlit
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,12 +26,10 @@ class QueryRequest(BaseModel):
 @app.post("/query_stream")
 def query_stream(request: QueryRequest):
     def event_stream():
-        # We wrap this in a try-except to ensure the stream closes cleanly
         try:
             for chunk in brain.stream_ask(request.query):
                 yield chunk + "\n"
         except Exception as e:
-            # Send an error chunk so frontend knows to stop
             import json
             yield json.dumps({"type": "error", "content": str(e)}) + "\n"
 
@@ -39,14 +37,20 @@ def query_stream(request: QueryRequest):
 
 @app.post("/ingest")
 def trigger_ingestion():
+    # This cleans the Vector DB
     status = brain.ingest_data()
     return {"status": status}
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    if not os.path.exists("data"):
-        os.makedirs("data")
+    # 1. CLEANUP: Wipe the 'data/' folder so we don't mix old PDFs with new ones
+    if os.path.exists("data"):
+        shutil.rmtree("data")
+    os.makedirs("data")
+    
+    # 2. SAVE: Save only the new file
     file_path = f"data/{file.filename}"
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-    return {"message": "Uploaded successfully"}
+        
+    return {"message": "Old data wiped. New file uploaded successfully."}
