@@ -1,148 +1,170 @@
-\# Veri-RAG Enterprise: Offline Multi-Agent Knowledge Engine
+> Aditya:
+# Veri-RAG Enterprise
 
-\*\*Secure. Accurate. Compliant.\*\*
+Tagline: Secure Offline Enterprise Knowledge Retrieval with Multi-Agent Verification
 
-Veri-RAG Enterprise is a specialized Retrieval-Augmented Generation system designed for sensitive, offline environments. Unlike standard chatbots, it utilizes a \*\*Multi-Agent Architecture\*\* to eliminate hallucinations and enforce strict compliance with uploaded documentation.
+---
 
-\## 🚀 Key Features
+## Introduction
 
-\* \*\*100% Offline:\*\* Runs locally using Ollama (Llama 3) and ChromaDB. No data leaves your machine.
+Veri-RAG Enterprise is an advanced Retrieval-Augmented Generation (RAG) system engineered for offline environments where data privacy, security, and factual accuracy are non-negotiable. Unlike standard RAG chatbots that simply summarize retrieved text, Veri-RAG employs a Multi-Agent Architecture to eliminate hallucinations.
 
-\* \*\*Zero-Hallucination Protocol:\*\*
+The system features a dedicated Auditor Agent that cross-checks every generated response against source documents before the final output is presented to the user. The entire pipeline runs locally on your machine (CPU or GPU) using Llama 3 (via Ollama) and ChromaDB, ensuring no data ever leaves the secure infrastructure.
 
-1\. \*\*Analyst Agent:\*\* Drafts an answer strictly from context.
+---
 
-2\. \*\*Auditor Agent:\*\* Reviews the draft against source text to flag inaccuracies.
+## Key Capabilities
 
-3\. \*\*Editor Agent:\*\* Synthesizes the final verified report.
+- 100% Offline Operation  
+  Fully functional without internet access once the models are pulled.
 
-\* \*\*Compliance Layer:\*\* Automatically detects and flags prohibited actions or missing safety warnings in the draft.
+- Zero-Hallucination Pipeline  
+  A 3-step workflow (**Analyst → Auditor → Editor**) ensures every claim is backed by the source text.
 
-\* \*\*Hardware Agnostic:\*\* Auto-detects GPU (CUDA) for speed, but fully functional on CPU (with adjusted timeouts).
+- Compliance & Safety Layer  
+  The Auditor Agent specifically scans for prohibited actions or missing safety warnings in the draft.
 
-\* \*\*Modern Dashboard:\*\* Theme-aware Streamlit UI with real-time thought process visualization.
+- Hardware Agnostic  
+  Automatically detects GPU (CUDA) for acceleration but falls back gracefully to CPU with extended timeouts.
 
-\## 🛠️ Technology Stack
+- Interactive Neural Dashboard  
+  A modern, theme-aware Streamlit interface that visualizes the “thought process” of the agents in real time.
 
-\* \*\*Frontend:\*\* Streamlit
+---
 
-\* \*\*Backend:\*\* FastAPI (Async Streaming)
+## Technology Stack
 
-\* \*\*LLM Engine:\*\* Ollama (Llama 3)
+- Core Logic: Python 3.10+
+- Frontend: Streamlit (UI/UX)
+- Backend: FastAPI (Async Streaming)
+- LLM Runtime: Ollama (hosting Llama 3)
+- Orchestration: LangChain (Chains, Prompts)
+- Vector Database: ChromaDB (Local Persistence)
+- Embeddings: HuggingFace (`all-MiniLM-L6-v2`)
 
-\* \*\*Orchestration:\*\* LangChain v0.3
+---
 
-\* \*\*Vector Store:\*\* ChromaDB (Local Persisted)
+## 1. Setup Information (Internal)
 
-\* \*\*Embeddings:\*\* HuggingFace (\`all-MiniLM-L6-v2\`)
+### System Requirements
 
-\---
+- OS: Ubuntu/Linux (preferred) or macOS  
+- Python: Version 3.10 is recommended  
+- Dependency: Ollama must be installed  
 
-\## 📂 Repository Structure
+    curl -fsSL https://ollama.com/install.sh | sh
+  
 
-\`\`\`text
+- RAM: 8 GB minimum (16 GB recommended for CPU performance)
+
+### Running the Project
+
+1. Place all files in the folder structure shown below.
+2. Open a terminal in the project folder.
+3. Make the script executable:
+
+      chmod +x run.sh
+   
+
+4. Run the startup script:
+
+      ./run.sh
+   
+
+5. The script will handle virtual env creation, installing dependencies, pulling Llama 3, and starting both servers.
+
+---
+
+## A. Repository Structure
+
+This is the file tree you should see in your GitHub repo:
 
 Veri-RAG-Enterprise/
-
 │
-
 ├── backend/
-
-│ ├── main.py # FastAPI entry point
-
-│ └── rag\_engine.py # Core logic & Agents
-
+│   ├── __init__.py        # (Empty file)
+│   ├── main.py            # FastAPI entry point
+│   └── rag_engine.py      # Core logic & Agents
 │
-
 ├── frontend/
-
-│ └── dashboard.py # Streamlit UI
-
+│   └── dashboard.py       # Streamlit UI
 │
+├── requirements.txt       # Dependencies
+├── run.sh                 # Startup script
+├── README.md              # Project documentation
+└── .gitignore             # (Recommended to ignore data/ and env/ folders)
 
-├── requirements.txt # Dependencies
+---
 
-├── run.sh # Unified startup script
-
-└── README.md # Project documentation
-
-⚙️ Setup Information
---------------------
-
-### Prerequisites
-
-*   **OS:** Ubuntu / Linux / macOS (Preferred).
-    
-*   **Python:** 3.10+
-    
-*   **Ollama:** Must be installed. [Download here](https://ollama.com/).
-    
-*   **RAM:** 8GB Minimum (16GB recommended for CPU performance).
-    
-
-### 🚀 Run the System
+## 2. Run the System
 
 We have provided a unified startup script that handles virtual environments, dependency installation, Ollama model pulling, and server startup.
 
-1.  bashgit clone \[https://github.com/adityadate0/Verified-Retrieval-Augmented-Generation.git\](https://github.com/adityadate0/Verified-Retrieval-Augmented-Generation.git)cd Verified-Retrieval-Augmented-Generation
-    
-2.  Bashchmod +x run.sh./run.sh
-    
+chmod +x run.sh
+./run.sh
 
-**What this script does:**
+### What This Script Does
 
-*   Creates a virtual environment veri\_rag\_env.
-    
-*   Installs Python dependencies from requirements.txt.
-    
-*   Checks if ollama is running; starts it if not.
-    
-*   Pulls the llama3 model (if not already present).
-    
-*   Launches the Backend API (Port 8000).
-    
-*   Launches the Frontend Dashboard (Port 8501).
-    
+- Creates a virtual environment offline_mechanic_env.
+- Installs Python dependencies from requirements.txt.
+- Checks if ollama is running; starts it if not.
+- Pulls the llama3 model (if not already present).
+- Launches the Backend API (Port `8000`).
+- Launches the Frontend Dashboard (Port `8501`).
 
-📖 Usage Guide
---------------
+---
 
-1.  **Access the Dashboard:**Open [http://localhost:8501](https://www.google.com/search?q=http://localhost:8501) in your browser.
-    
-2.  **Ingest Knowledge:**
-    
-    *   Open the **Sidebar** (Left).
-        
-    *   Upload a PDF (e.g., Policy Manual, Technical SOP).
-        
-    *   Click **"🚀 Upload & Vectorize"**.
-        
-    *   _Note: On CPU, this may take 1-2 minutes._
-        
-3.  **Ask a Question:**
-    
-    *   Type your query in the chat bar.
-        
-    *   **Watch the Agents work:**
-        
-        *   🔍 Retrieval: Finds relevant pages.
-            
-        *   👨‍💻 Analyst: Drafts the content.
-            
-        *   👮 Auditor: Verifies facts (Pass/Flag).
-            
-        *   📝 Synthesis: Generates the final report.
-            
-4.  **Stop/Reset:**
-    
-    *   If a query gets stuck or you entered the wrong prompt, click **"⛔ Stop / Reset"** in the sidebar to restart the session immediately.
-        
+## 3. Usage Guide
 
-🔧 Troubleshooting
-------------------
+### Access the Dashboard
 
-*   **"Connection Error" / Timeout:**If running on CPU, complex queries may time out. The system is configured with a 600s (10-minute) timeout. Try asking simpler questions.
-    
-*   **Telemetry Errors in Terminal:**We have disabled ChromaDB telemetry in rag\_engine.py to keep logs clean. If you see them, ensure you are using the latest version of the code provided in this repo.
-    
-*   **Port Conflicts:**Ensure ports **8000** and **8501** are free before running.
+Open the following URL in your browser:
+
+http://localhost:8501
+
+### Ingest Knowledge
+
+1. Open the Sidebar (left side of the dashboard).
+2. Upload a PDF (e.g., Policy Manual, Technical SOP).
+3. Click "🚀 Upload & Vectorize".
+
+> Note: On CPU, this may take 1–2 minutes.
+
+### Ask a Question
+
+1. Type your query in the chat bar.
+2. Observe the agents as they process your request:
+
+   - 🔍 Retrieval: Finds relevant
+
+> Aditya:
+pages.
+   - 👨‍💻 Analyst: Drafts the content.
+   - 👮 Auditor: Verifies facts (Pass/Flag).
+   - 📝 Synthesis: Generates the final report.
+
+### Stop / Reset
+
+If a query gets stuck or you entered the wrong prompt, click "⛔ Stop / Reset" in the sidebar to restart the session immediately.
+
+---
+
+## 🔧 Troubleshooting
+
+### "Connection Error" / Timeout
+
+- If running on CPU, complex queries may time out.  
+- The system is configured with a 600s (10-minute) timeout.  
+- Try asking simpler questions or reducing query complexity.
+
+### Telemetry Errors in Terminal
+
+- ChromaDB telemetry is disabled in rag_engine.py to keep logs clean.  
+- If you still see telemetry-related logs, ensure you are using the latest version of the code.
+
+### Port Conflicts
+
+- Ensure ports 8000 (Backend API) and 8501 (Frontend Dashboard) are free before running the system.
+- Stop any other services using these ports or reconfigure them if necessary.
+
+---
