@@ -165,6 +165,15 @@ If a query gets stuck or you entered the wrong prompt, click **"⛔ Stop / Reset
 
 ## 🔧 Troubleshooting
 
+## ⚡ Performance & GPU Support
+
+By default, the project runs in **Safe Mode (CPU)** to ensure compatibility with all hardware, including older laptops.
+
+**To enable GPU Acceleration**
+1. Open `run.sh`.
+2. Change line 5 to: `ENABLE_GPU=true`.
+3. Restart the system: `./run.sh`.
+
 ### "Connection Error" / Timeout
 
 - If running on CPU, complex queries may time out.  

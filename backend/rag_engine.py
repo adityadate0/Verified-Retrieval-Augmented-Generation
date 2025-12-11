@@ -1,7 +1,7 @@
 import os
 
-# --- CRITICAL FIX: DISABLE TELEMETRY BEFORE IMPORTS ---
-# This stops Chroma from trying to phone home, which kills the error.
+# DISABLE TELEMETRY BEFORE IMPORTS ---
+# This stops Chroma from trying to phone home, killing the unreachable error.
 os.environ["ANONYMIZED_TELEMETRY"] = "False"
 os.environ["CHROMA_TELEMETRY_IMPL"] = "chromadb.telemetry.posthog.Posthog" 
 
@@ -21,25 +21,48 @@ DB_PATH = "chroma_db/"
 
 class UniversalBrain:
     def __init__(self):
-        # 1. HARDWARE ACCELERATION
-        device_type = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"🚀 Brain Initialized on: {device_type.upper()}")
+        # 1. SMART HARDWARE ACCELERATION
+        # Detects if GPU is available AND compatible (Compute Capability >= 7.0)
+        try:
+            if torch.cuda.is_available():
+                capability = torch.cuda.get_device_capability()
+                major_version = capability[0]
+                
+                if major_version >= 7:
+                    device_type = "cuda"
+                    print(f"🚀 Brain Initialized on: {device_type.upper()} (Compute {major_version}.{capability[1]})")
+                else:
+                    device_type = "cpu"
+                    print(f"⚠️ GPU Detected (GTX 9xx/10xx) but incompatible with modern PyTorch.")
+                    print(f"🚀 Brain Initialized on: CPU (Fallback for stability)")
+            else:
+                device_type = "cpu"
+                print(f"🚀 Brain Initialized on: {device_type.upper()}")
+                
+        except Exception as e:
+            device_type = "cpu"
+            print(f"⚠️ Hardware Detection Error: {e}")
+            print(f"🚀 Brain Initialized on: CPU")
 
         # 2. EMBEDDINGS
+        # encode_kwargs added to ensure stable vector normalization on older CPUs
         self.embeddings = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
-            model_kwargs={'device': device_type}
+            model_kwargs={'device': device_type},
+            encode_kwargs={'normalize_embeddings': True}
         )
         
         # 3. LLM (Ollama)
-        self.llm = OllamaLLM(model="llama3", temperature=0)
+        # CRITICAL FIXES: 
+        # - Use 'llama3.2' (3B) for RAM efficiency.
+        # - Set 'num_ctx=2048' to prevent memory overflow crashes on lengthy documents.
+        self.llm = OllamaLLM(model="llama3", temperature=0, num_ctx=2048)
         
         # 4. VECTOR STORE SETUP
         if os.path.exists(DB_PATH):
             self.vector_store = Chroma(
                 persist_directory=DB_PATH, 
                 embedding_function=self.embeddings
-                # No need for client_settings here anymore, the env var handles it globally
             )
             self.retriever = self.vector_store.as_retriever(search_kwargs={"k": 4})
         else:

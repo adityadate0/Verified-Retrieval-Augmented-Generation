@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# --- CONFIGURATION ---
+# Set this to "true" if you have a powerful NVIDIA GPU (RTX 20xx or newer).
+# Set this to "false" for stability on older GPUs (GTX 9xx/10xx) or CPU-only machines.
+ENABLE_GPU=false
+
+if [ "$ENABLE_GPU" = "false" ]; then
+    echo "🔒 GPU Disabled (Safe Mode). Using CPU for stability."
+    export CUDA_VISIBLE_DEVICES=""
+else
+    echo "🔓 GPU Enabled. Searching for compatible hardware..."
+fi
+
 # 1. Setup Environment
 if [ ! -d "veri_rag_env" ]; then
     echo "Creating virtual environment..."
