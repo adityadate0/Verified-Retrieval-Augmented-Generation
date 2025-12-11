@@ -62,10 +62,12 @@ The system features a dedicated **Auditor Agent** that cross-checks every genera
 Clone the Repository
 
 ```bash
+
 git clone https://github.com/adityadate0/Verified-Retrieval-Augmented-Generation.git
-```
 
 cd Verified-Retrieval-Augmented-Generation
+
+```
 1. Place all files in the folder structure shown below.
 2. Open a terminal in the project folder.
 3. Make the script executable:
