@@ -43,7 +43,7 @@ class UniversalBrain:
             encode_kwargs={'normalize_embeddings': True}
         )
         
-        # 3. LLM (Using Llama 3.2 3B)
+        # 3. LLM (Using Llama 3)
         self.llm = OllamaLLM(model="llama3", temperature=0, num_ctx=2048)
         
         # 4. VECTOR STORE SETUP
