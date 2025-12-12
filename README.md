@@ -147,6 +147,8 @@ We have provided a sample document to test the system's ability to catch violati
    * The **Auditor** will detect that 5:00 AM is outside the allowed 02:00-04:00 AM window.
    * The **Final Response** will be a refusal/correction.
 
+5. Veri-RAG's response to the trap question is in the screenshot ![Audit Logic Deep Dive](samples/Readme_example.png)
+
 ### Normal Usage
 * Upload your own PDF manuals (SOPs, Policy Documents, etc.).
 * Ask questions. The system will strictly enforce the rules found in your text.
