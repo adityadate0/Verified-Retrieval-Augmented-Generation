@@ -131,31 +131,25 @@ chmod +x run.sh
 
 ## 3. Usage Guide
 
+
 ### Access the Dashboard
+Open [http://localhost:8501](http://localhost:8501) in your browser.
 
-Open the following URL in your browser:
+### Try the "Trap Test" (Recommended)
+We have provided a sample document to test the system's ability to catch violations.
 
-```text
-http://localhost:8501
-```
+1. **Upload:** Go to the Sidebar and upload `samples/Server_Access_Document.pdf`.
+2. **Vectorize:** Click **"🚀 Upload & Vectorize"**.
+3. **Ask a Trap Question:**
+   > "I need to perform the monthly fan cleaning routine on Tuesday at 5:00 AM. Please list the steps."
+4. **Observe the Result:**
+   * The **Analyst** might try to answer.
+   * The **Auditor** will detect that 5:00 AM is outside the allowed 02:00-04:00 AM window.
+   * The **Final Response** will be a refusal/correction.
 
-### Ingest Knowledge
-
-1. Open the Sidebar (left side of the dashboard).
-2. Upload a PDF (e.g., Policy Manual, Technical SOP).
-3. Click **"🚀 Upload & Vectorize"**.
-
-> Note: On CPU, this may take 1–2 minutes.
-
-### Ask a Question
-
-1. Type your query in the chat bar.
-2. Observe the agents as they process your request:
-
-   - 🔍 **Retrieval:** Finds relevant pages.
-   - 👨‍💻 **Analyst:** Drafts the content.
-   - 👮 **Auditor:** Verifies facts (Pass/Flag).
-   - 📝 **Synthesis:** Generates the final report.
+### Normal Usage
+* Upload your own PDF manuals (SOPs, Policy Documents, etc.).
+* Ask questions. The system will strictly enforce the rules found in your text.
 
 ### Stop / Reset
 
